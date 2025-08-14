@@ -1,8 +1,5 @@
-const express = require('express');
-const { completeTask, getProgress } = require('../controllers/taskController');
-const router = express.Router();
-
-router.post('/complete', completeTask);
-router.get('/:telegramId', getProgress);
-
-module.exports = router;
+import { Router } from "express";
+import { completeTask } from "../controllers/taskController.js";
+const router = Router();
+router.post("/complete-task", completeTask);
+export default router;
