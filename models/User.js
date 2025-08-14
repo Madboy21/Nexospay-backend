@@ -1,12 +1,26 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   telegramId: { type: String, required: true, unique: true },
+  username: String,
   firstName: String,
-  balance: { type: Number, default: 0 },
-  completed: { type: Number, default: 0 },
-  referrerId: { type: String, default: null },
-});
+  lastName: String,
+  tokens: { type: Number, default: 0 },
+  completedTasks: { type: Number, default: 0 },
+  referrals: { type: Number, default: 0 },
+  referralBonusTokens: { type: Number, default: 0 },
+  referredBy: { type: String, default: null },
+  dayStamp: { type: String, default: null },
+  tasksToday: { type: Number, default: 0 },
+  withdrawRequests: [
+    {
+      amount: Number,
+      date: { type: Date, default: Date.now },
+      status: { type: String, enum: ["pending","approved","rejected"], default: "pending" }
+    }
+  ]
+}, { timestamps: true });
 
-module.exports = mongoose.model("User", UserSchema);
+export default mongoose.model("User", userSchema);
+
 
