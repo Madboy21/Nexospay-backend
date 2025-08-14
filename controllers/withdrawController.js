@@ -1,12 +1,10 @@
-import User from "../models/User.js";
-import Withdraw from "../models/Withdraw.js";
-import { MIN_WITHDRAW } from "../config/constants.js";
-
 export async function requestWithdraw(req,res){
   try{
-    const { telegramId, amount } = req.body;
+    const { telegramId, amount, binanceUID } = req.body;
     if(!telegramId) return res.status(400).json({error:"telegramId required"});
     if(!amount) return res.status(400).json({error:"Amount required"});
+    if(!binanceUID) return res.status(400).json({error:"Binance UID required"});
+    
     const user = await User.findOne({ telegramId });
     if(!user) return res.status(404).json({error:"User not found"});
     if(amount < MIN_WITHDRAW) return res.status(400).json({error:`Minimum withdraw ${MIN_WITHDRAW} tokens`});
@@ -15,7 +13,7 @@ export async function requestWithdraw(req,res){
     user.tokens -= amount;
     await user.save();
 
-    const w = await Withdraw.create({ telegramId, amount, status:"pending" });
+    const w = await Withdraw.create({ telegramId, amount, binanceUID, status:"pending" });
     return res.json({ success:true, withdraw:w, user });
   }catch(e){ console.error(e); return res.status(500).json({error:"Server error"});}
 }
