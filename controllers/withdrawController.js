@@ -1,37 +1,21 @@
-const Withdraw = require('../models/Withdraw');
-const User = require('../models/User');
+import User from "../models/User.js";
+import Withdraw from "../models/Withdraw.js";
+import { MIN_WITHDRAW } from "../config/constants.js";
 
-const requestWithdraw = async (req, res) => {
-  try {
-    const { telegramId, wallet } = req.body;
-
-    if (!telegramId || !wallet) {
-      return res.status(400).json({ message: 'telegramId and wallet are required' });
-    }
-
+export async function requestWithdraw(req,res){
+  try{
+    const { telegramId, amount } = req.body;
+    if(!telegramId) return res.status(400).json({error:"telegramId required"});
+    if(!amount) return res.status(400).json({error:"Amount required"});
     const user = await User.findOne({ telegramId });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if(!user) return res.status(404).json({error:"User not found"});
+    if(amount < MIN_WITHDRAW) return res.status(400).json({error:`Minimum withdraw ${MIN_WITHDRAW} tokens`});
+    if(amount > user.tokens) return res.status(400).json({error:"Insufficient tokens"});
 
-    if (user.balance < 100) {
-      return res.status(400).json({ message: 'Minimum balance of 100 not met' });
-    }
-
-    // Create new withdraw request with the current balance amount
-    const withdraw = new Withdraw({ telegramId, wallet, amount: user.balance });
-    await withdraw.save();
-
-    // Reset user balance to 0 after withdrawal request
-    user.balance = 0;
+    user.tokens -= amount;
     await user.save();
 
-    res.status(201).json({ message: 'Withdraw requested successfully' });
-
-  } catch (error) {
-    console.error('Withdraw request error:', error);
-    res.status(500).json({ message: 'Server error during withdraw request' });
-  }
-};
-
-module.exports = { requestWithdraw };
+    const w = await Withdraw.create({ telegramId, amount, status:"pending" });
+    return res.json({ success:true, withdraw:w, user });
+  }catch(e){ console.error(e); return res.status(500).json({error:"Server error"});}
+}
