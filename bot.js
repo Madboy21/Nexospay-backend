@@ -1,31 +1,20 @@
-require("dotenv").config();
-const TelegramBot = require("node-telegram-bot-api");
-const mongoose = require("mongoose");
-const User = require("./models/User");
-const connectDB = require("./config/db");
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import { connectDB } from "./config/db.js";
+import userRoutes from "./routes/userRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
+import withdrawRoutes from "./routes/withdrawRoutes.js";
 
-connectDB();
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+app.use("/api/users", userRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/withdraws", withdrawRoutes);
 
-bot.onText(/\/start(?:\s+(.*))?/, async (msg, match) => {
-  const chatId = msg.chat.id;
-  const username = msg.chat.username;
-  const firstName = msg.chat.first_name;
-  const lastName = msg.chat.last_name;
-  const referredBy = match[1] || null;
-
-  let user = await User.findOne({ telegramId: chatId.toString() });
-
-  if (!user) {
-    user = await User.create({
-      telegramId: chatId.toString(),
-      username,
-      firstName,
-      lastName,
-      referredBy
-    });
-  }
-
-  bot.sendMessage(chatId, `Welcome ${firstName}! Your account has been created.`);
+const PORT = process.env.PORT || 5000;
+connectDB(process.env.MONGO_URI).then(()=>{
+  app.listen(PORT,()=>console.log(`🚀 Backend running on http://localhost:${PORT}`));
 });
